@@ -9,10 +9,12 @@
 
   tasks:
     - name: install dependancies
-      apt: name=$item state=present
+      apt: name=$item state=present update-cache=yes
       with_items:
         - git
+        - bzr
         - etckeeper
+        - python-software-properties
       environment: "{{ proxy_env }}"
 
     - name: get ceph release key
@@ -24,5 +26,8 @@
       environment: "{{ proxy_env }}"
 
     - name: Install CEPH
-      apt: pkg=ceph state=latest update-cache=yes
+      apt: name=$item state=latest update-cache=yes
+      with_items:
+        - ceph
+        - radosgw
       environment: "{{ proxy_env }}"
