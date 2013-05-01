@@ -8,7 +8,7 @@
       https_proxy: http://proxy.tchpc.tcd.ie:8080
 
   tasks:
-    - name: install dependancies
+    - name: Install dependancies
       apt: name=$item state=present update-cache=yes
       with_items:
         - git
@@ -17,7 +17,7 @@
         - python-software-properties
       environment: "{{ proxy_env }}"
 
-    - name: get ceph release key
+    - name: Get ceph release key
       apt_key: id=17ED316D url=https://raw.github.com/ceph/ceph/master/keys/release.asc state=present
       environment: "{{ proxy_env }}"
 
