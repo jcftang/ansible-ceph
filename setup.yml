@@ -15,6 +15,7 @@
         - bzr
         - etckeeper
         - python-software-properties
+        - python-virtualenv
       environment: "{{ proxy_env }}"
 
     - name: Get ceph release key
@@ -32,7 +33,13 @@
         - radosgw
       environment: "{{ proxy_env }}"
 
-    - name: Install ceph-deploy for making clusters fast
-      sudo: False
-      git: repo=https://github.com/ceph/ceph-deploy dest=~/ceph-deploy
+    - name: Clone ceph-deploy for making clusters fast
+      git: repo=https://github.com/ceph/ceph-deploy dest=/opt/ceph-deploy
       environment: "{{ proxy_env }}"
+
+    - name: Bootstrap ceph-deploy
+      command: ./bootstrap chdir=/opt/ceph-deploy creates=/opt/ceph-deploy/ceph-deploy
+      environment: "{{ proxy_env }}"
+
+    - name: Symlink ceph-deploy to /usr/local/bin
+      file: src=/opt/ceph-deploy/ceph-deploy dest=/usr/local/bin/ceph-deploy state=link
