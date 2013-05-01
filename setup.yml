@@ -31,3 +31,8 @@
         - ceph
         - radosgw
       environment: "{{ proxy_env }}"
+
+    - name: Install ceph-deploy for making clusters fast
+      sudo: False
+      git: repo=https://github.com/ceph/ceph-deploy dest=~/ceph-deploy
+      environment: "{{ proxy_env }}"
