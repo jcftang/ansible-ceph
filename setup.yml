@@ -15,6 +15,7 @@
     osd_fqdn_0: ${ansible_default_ipv4.address}
     osd_fqdn_1: ${ansible_default_ipv4.address}
     radosgw_hostname: ${ansible_hostname}
+    email_address: nops
 
   tasks:
     ## install public/private keys
@@ -126,9 +127,45 @@
 
     - name: enable some apache mods
       command: a2enmod rewrite
+      notify:
+        - restart apache2
 
     - name: enable some apache mods
       command: a2enmod fastcgi
+      notify:
+        - restart apache2
 
     - name: install default httpd.conf
       template: src=templates/httpd.conf dest=/etc/apache2/httpd.conf owner=root group=root
+      notify:
+        - restart apache2
+
+    - name: install rgw.conf
+      template: src=templates/rgw.conf dest=/etc/apache2/sites-available/rgw.conf owner=root group=root
+      notify:
+        - restart apache2
+
+    - name: enable rgw.conf
+      command: a2ensite rgw.conf
+      notify:
+        - restart apache2
+
+    - name: disable default site
+      command: a2dissite default
+      notify:
+        - restart apache2
+
+    - name: create a user in radosgw
+      command: radosgw-admin user create --uid=johndoe --display-name="John Doe" --email=john@example.com
+
+    - name: create a swift subuser
+      command: radosgw-admin subuser create --uid=johndoe --subuser=johndoe:swift --access=full
+      ignore_errors: True
+
+    - name: create a swift subuser key
+      command: radosgw-admin key create --subuser=johndoe:swift --key-type=swift
+      ignore_errors: True
+
+  handlers:
+    - name: restart apache2
+      service: name=apache2 state=restarted
