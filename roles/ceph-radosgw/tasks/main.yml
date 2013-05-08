@@ -1,0 +1,151 @@
+---
+    ## install public/private keys
+    - name: authorized_keys for root
+      authorized_key: user=root key="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key" state=present
+
+    - name: install insecure private key for root
+      action: copy src=insecure_private_key dest=/root/.ssh/id_rsa owner=root group=root mode=0600
+
+    - name: install insecure config for root
+      action: copy src=insecure_config dest=/root/.ssh/config owner=root group=root mode=0600
+
+    - name: authorized_keys for vagrant
+      authorized_key: user=vagrant key="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key" state=present
+
+    ## boiler plate
+    - name: Install dependancies
+      apt: name=$item state=present update-cache=yes
+      with_items:
+        - git
+        - bzr
+        - etckeeper
+        - python-software-properties
+        - python-virtualenv
+      environment: "{{ proxy_env }}"
+
+    ## install ceph from upstream repos
+    - name: Get ceph release key
+      apt_key: id=17ED316D url=https://raw.github.com/ceph/ceph/master/keys/release.asc state=present
+      environment: "{{ proxy_env }}"
+
+    - name: Add the BOBTAIL repo
+      apt_repository: repo='deb http://eu.ceph.com/debian-bobtail/ $(lsb_release -sc) main' state=present
+      environment: "{{ proxy_env }}"
+
+    - name: Install CEPH
+      apt: name=$item state=latest update-cache=yes
+      with_items:
+        - ceph
+        - radosgw
+        - apache2
+        - libapache2-mod-fastcgi
+      environment: "{{ proxy_env }}"
+
+    ## install ceph deploy for configuring/setting up ceph
+    - name: Clone ceph-deploy for making clusters fast
+      git: repo=https://github.com/ceph/ceph-deploy dest=/opt/ceph-deploy
+      environment: "{{ proxy_env }}"
+
+    - name: Bootstrap ceph-deploy
+      command: ./bootstrap chdir=/opt/ceph-deploy creates=/opt/ceph-deploy/ceph-deploy
+      environment: "{{ proxy_env }}"
+
+    - name: Symlink ceph-deploy to /usr/local/bin
+      file: src=/opt/ceph-deploy/ceph-deploy dest=/usr/local/bin/ceph-deploy state=link
+
+    ## use old method of setting up ceph for now
+    - name: install reference ceph.conf
+      action: template src=ceph.conf dest=/etc/ceph/ceph.conf owner=root group=root
+
+    - name: create directories for ceph mons and osds
+      action: file path=$item state=directory
+      with_items:
+        - /var/lib/ceph/osd/ceph-0
+        - /var/lib/ceph/osd/ceph-1
+        - /var/lib/ceph/mon/ceph-a
+        - /var/lib/ceph/mds/ceph-a
+        - /var/lib/ceph/radosgw/${radosgw_hostname}
+
+    - name: Make sure root fs is mounted with correct settings
+      mount: name=/ fstype=ext4 opts=errors=remount-ro,user_xattr src=/dev/mapper/precise64-root passno=1 state=mounted
+
+    - name: create the ceph filesystem
+      action: command mkcephfs -a -c /etc/ceph/ceph.conf -k /etc/ceph/ceph.keyring chdir=/etc/ceph creates=/etc/ceph/ceph.keyring
+
+    - name: start ceph
+      action: command service ceph -a start
+
+    - name: Wait for mon to come up
+      wait_for: host=${mon_ip_a} port=${mon_port}
+
+    - name: ensure ceph is enabled
+      action: service name=ceph state=started enabled=yes
+
+    - name: register ceph secret key
+      action: shell grep key /etc/ceph/ceph.keyring | awk '{print $3}' > /etc/ceph/admin.secret creates=/etc/ceph/admin.secret
+
+    - name: Wait for mon to come up
+      wait_for: host=${mon_ip_a} port=${mon_port}
+
+    - name: Make mount point for ceph
+      action: file path=/ceph state=directory
+
+    ## radosgw -- docs at http://ceph.com/docs/master/radosgw/config/ -- seems out of sync
+    - name: create keyring for radosgw
+      command: ceph-authtool --create-keyring /etc/ceph/keyring.radosgw.gateway creates=/etc/ceph/keyring.radosgw.gateway
+
+    - name: generate a client
+      command: ceph-authtool /etc/ceph/keyring.radosgw.gateway -n client.radosgw.gateway --gen-key
+
+    - name: add capability
+      command: ceph-authtool -n client.radosgw.gateway --cap osd 'allow rwx' --cap mon 'allow r' /etc/ceph/keyring.radosgw.gateway
+
+    - name: add radosgw keys to ceph keyring
+      command: ceph -k /etc/ceph/ceph.keyring auth add client.radosgw.gateway -i /etc/ceph/keyring.radosgw.gateway
+
+    - name: install s3gw.fcgi script
+      copy: src=s3gw.fcgi dest=/var/www/s3gw.fcgi mode=0555 owner=root group=root
+
+    - name: enable some apache mods
+      command: a2enmod rewrite
+      notify:
+        - restart apache2
+
+    - name: enable some apache mods
+      command: a2enmod fastcgi
+      notify:
+        - restart apache2
+
+    - name: install default httpd.conf
+      template: src=httpd.conf dest=/etc/apache2/httpd.conf owner=root group=root
+      notify:
+        - restart apache2
+
+    - name: install rgw.conf
+      template: src=rgw.conf dest=/etc/apache2/sites-available/rgw.conf owner=root group=root
+      notify:
+        - restart apache2
+
+    - name: enable rgw.conf
+      command: a2ensite rgw.conf
+      notify:
+        - restart apache2
+
+    - name: disable default site
+      command: a2dissite default
+      notify:
+        - restart apache2
+
+    - name: start radosgw
+      command: /etc/init.d/radosgw start
+
+    - name: create a user in radosgw
+      command: radosgw-admin user create --uid=johndoe --display-name="John Doe" --email=john@example.com
+
+    - name: create a swift subuser
+      command: radosgw-admin subuser create --uid=johndoe --subuser=johndoe:swift --access=full
+      ignore_errors: True
+
+    - name: create a swift subuser key
+      command: radosgw-admin key create --subuser=johndoe:swift --key-type=swift
+      ignore_errors: True

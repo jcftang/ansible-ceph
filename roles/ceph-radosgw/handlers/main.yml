@@ -1,0 +1,6 @@
+---
+  - name: restart apache2
+    service: name=apache2 state=restarted enabled=yes
+
+  - name: start radosgw
+    service: name=radosgw state=restarted enabled=yes
