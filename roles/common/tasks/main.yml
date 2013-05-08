@@ -1,0 +1,11 @@
+---
+    ## boiler plate
+    - name: Install dependancies
+      apt: name=$item state=present update-cache=yes
+      with_items:
+        - git
+        - bzr
+        - etckeeper
+        - python-software-properties
+        - python-virtualenv
+        - curl

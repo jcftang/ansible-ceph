@@ -1,36 +1,10 @@
 ---
-    ## install public/private keys
-    - name: authorized_keys for root
-      authorized_key: user=root key="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key" state=present
-
-    - name: install insecure private key for root
-      action: copy src=insecure_private_key dest=/root/.ssh/id_rsa owner=root group=root mode=0600
-
-    - name: install insecure config for root
-      action: copy src=insecure_config dest=/root/.ssh/config owner=root group=root mode=0600
-
-    - name: authorized_keys for vagrant
-      authorized_key: user=vagrant key="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key" state=present
-
-    ## boiler plate
-    - name: Install dependancies
-      apt: name=$item state=present update-cache=yes
-      with_items:
-        - git
-        - bzr
-        - etckeeper
-        - python-software-properties
-        - python-virtualenv
-      environment: "{{ proxy_env }}"
-
     ## install ceph from upstream repos
     - name: Get ceph release key
       apt_key: id=17ED316D url=https://raw.github.com/ceph/ceph/master/keys/release.asc state=present
-      environment: "{{ proxy_env }}"
 
     - name: Add the BOBTAIL repo
       apt_repository: repo='deb http://eu.ceph.com/debian-bobtail/ $(lsb_release -sc) main' state=present
-      environment: "{{ proxy_env }}"
 
     - name: Install CEPH
       apt: name=$item state=latest update-cache=yes
@@ -39,19 +13,16 @@
         - radosgw
         - apache2
         - libapache2-mod-fastcgi
-      environment: "{{ proxy_env }}"
 
     ## install ceph deploy for configuring/setting up ceph
-    - name: Clone ceph-deploy for making clusters fast
-      git: repo=https://github.com/ceph/ceph-deploy dest=/opt/ceph-deploy
-      environment: "{{ proxy_env }}"
+    #- name: Clone ceph-deploy for making clusters fast
+    #  git: repo=https://github.com/ceph/ceph-deploy dest=/opt/ceph-deploy
 
-    - name: Bootstrap ceph-deploy
-      command: ./bootstrap chdir=/opt/ceph-deploy creates=/opt/ceph-deploy/ceph-deploy
-      environment: "{{ proxy_env }}"
+    #- name: Bootstrap ceph-deploy
+    #  command: ./bootstrap chdir=/opt/ceph-deploy creates=/opt/ceph-deploy/ceph-deploy
 
-    - name: Symlink ceph-deploy to /usr/local/bin
-      file: src=/opt/ceph-deploy/ceph-deploy dest=/usr/local/bin/ceph-deploy state=link
+    #- name: Symlink ceph-deploy to /usr/local/bin
+    #  file: src=/opt/ceph-deploy/ceph-deploy dest=/usr/local/bin/ceph-deploy state=link
 
     ## use old method of setting up ceph for now
     - name: install reference ceph.conf
