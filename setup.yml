@@ -21,13 +21,9 @@
     - name: Install dependancies
       apt: name=$item state=present update-cache=yes
       with_items:
-        - git
-        - bzr
-        - etckeeper
         - python-software-properties
         - python-virtualenv
         - python-apt
-        - curl
       environment:
         https_proxy: http://134.226.112.43:8080
 
