@@ -7,3 +7,12 @@
 
   - name: configure curlrc for root
     action: template src=curlrc.j2 dest=/root/.curlrc
+
+  - name: Configure wgetrc for the system
+    action: template src=wgetrc.j2 dest=/etc/wgetrc
+
+  - name: /root/.pip
+    file: path=/root/.pip/ owner=root  mode=0755 state=directory
+
+  - name: write /root/.pip/pip.conf
+    template: src=../templates/pip.j2 dest=/root/.pip/pip.conf owner=root

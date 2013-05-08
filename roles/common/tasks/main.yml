@@ -8,4 +8,5 @@
         - etckeeper
         - python-software-properties
         - python-virtualenv
+        - python-apt
         - curl

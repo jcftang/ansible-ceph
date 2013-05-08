@@ -1,8 +1,5 @@
 ---
     ## install ceph from upstream repos
-    - name: Get ceph release key
-      apt_key: id=17ED316D url=https://raw.github.com/ceph/ceph/master/keys/release.asc state=present
-
     - name: Add the BOBTAIL repo
       apt_repository: repo='deb http://eu.ceph.com/debian-bobtail/ $(lsb_release -sc) main' state=present
 
