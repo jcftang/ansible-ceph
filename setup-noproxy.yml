@@ -30,6 +30,8 @@
       apt_key: id=17ED316D url=https://raw.github.com/ceph/ceph/master/keys/release.asc state=present
 
   roles:
+    - role: common
+
     - role: ceph-radosgw
       mon_port: 6789
       mon_ip_a: ${ansible_default_ipv4.address}

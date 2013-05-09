@@ -41,6 +41,8 @@
       socks_server: 134.226.112.43
       socks_port: 1080
 
+    - role: common
+
     - role: ceph-radosgw
       mon_port: 6789
       mon_ip_a: ${ansible_default_ipv4.address}

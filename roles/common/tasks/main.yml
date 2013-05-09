@@ -7,3 +7,7 @@
         - bzr
         - etckeeper
         - curl
+        - avahi-daemon
+        - avahi-utils
+        - avahi-discover
+        - avahi-dnsconfd
