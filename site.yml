@@ -1,5 +1,5 @@
 ---
-- hosts: ceph
+- hosts: radosgw
   user: root
 
   vars:

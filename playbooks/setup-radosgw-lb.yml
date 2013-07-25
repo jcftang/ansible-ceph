@@ -1,0 +1,42 @@
+---
+- hosts: radosgw
+  user: root
+# dummy play to get some information from the gateways themselves
+
+- hosts: radosgw-lb
+  user: root
+
+  pre_tasks:
+    - name: Install dependancies
+      apt: name=$item state=present update-cache=yes
+      with_items:
+        - python-software-properties
+        - python-virtualenv
+        - python-apt
+      environment:
+        http_proxy: http://{{proxy_server}}:{{proxy_port}}
+        https_proxy: http://{{proxy_server}}:{{proxy_port}}
+
+  roles:
+    - role: ../../roles/proxy
+    - role: ../../roles/common
+
+  tasks:
+    - apt_key: id=1C61B9CD url=http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x505D97A41C61B9CD
+      environment:
+        http_proxy: http://{{proxy_server}}:{{proxy_port}}
+    - apt_repository: repo=ppa:vbernat/haproxy-1.5 state=present
+    - apt: update_cache=yes name=haproxy state=present
+    # self signed certs
+    # openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/apache2/ssl/apache.key -out /etc/apache2/ssl/apache.crt
+    # openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout radosgw.key -out radosgw.crt # the FQDN is done  with *.tchpc.tcd.ie
+    # cat radosgw.key radosgw.crt > radosgw-key-cert.pem
+    - file: path=/etc/ceph state=directory
+    - copy: src=../private/radosgw-key-cert.pem dest=/etc/ceph/radosgw-key-cert.pem
+    - copy: src=../files/haproxy/haproxy dest=/etc/default/haproxy
+    - template: src=../templates/haproxy/haproxy.cfg dest=/etc/haproxy/haproxy.cfg
+      notify: restart haproxy
+
+  handlers:
+    - name: restart haproxy
+      service: name=haproxy state=restarted
