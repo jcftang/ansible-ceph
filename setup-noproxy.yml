@@ -1,3 +1,4 @@
+# for use with vagrant/development
 ---
 - hosts: ceph
   sudo: True
