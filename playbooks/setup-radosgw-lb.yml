@@ -33,7 +33,9 @@
     # cat radosgw.key radosgw.crt > radosgw-key-cert.pem
     - file: path=/etc/ceph state=directory
     - copy: src=../private/radosgw-key-cert.pem dest=/etc/ceph/radosgw-key-cert.pem
+      notify: restart haproxy
     - copy: src=../files/haproxy/haproxy dest=/etc/default/haproxy
+      notify: restart haproxy
     - template: src=../templates/haproxy/haproxy.cfg dest=/etc/haproxy/haproxy.cfg
       notify: restart haproxy
 
