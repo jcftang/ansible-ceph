@@ -2,3 +2,5 @@
 *.swp
 private
 hosts.local
+hosts.production
+hosts.test
