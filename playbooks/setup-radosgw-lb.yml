@@ -26,11 +26,14 @@
       environment:
         http_proxy: http://{{proxy_server}}:{{proxy_port}}
     - apt_repository: repo=ppa:vbernat/haproxy-1.5 state=present
-    - apt: update_cache=yes name=haproxy state=present
+    - apt: update_cache=yes name=$item state=present
+      with_items:
+        - haproxy
+        - socat
     # self signed certs
     # openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/apache2/ssl/apache.key -out /etc/apache2/ssl/apache.crt
     # openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout radosgw.key -out radosgw.crt # the FQDN is done  with *.tchpc.tcd.ie
-    # cat radosgw.key radosgw.crt > radosgw-key-cert.pem
+    # cat radosgw.key chain.pem radosgw.crt > radosgw-key-cert.pem
     - file: path=/etc/ceph state=directory
     - copy: src=../private/radosgw-key-cert.pem dest=/etc/ceph/radosgw-key-cert.pem
       notify: restart haproxy

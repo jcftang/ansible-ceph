@@ -1,0 +1,23 @@
+---
+- hosts: radosgw-lb
+  user: root
+
+- hosts: radosgw
+  user: root
+  serial: 1
+
+  pre_tasks:
+    - name: disable radosgw in haproxy
+      shell: echo "disable server radosgw-lb/{{ ansible_hostname }}" | socat stdio /var/lib/haproxy/stats
+      delegate_to: "{{ item }}"
+      with_items: groups.radosgw-lb
+
+  tasks:
+    - apt: upgrade=yes
+    # other tasks that might be needed to be done
+
+  post_tasks:
+    - name: disable radosgw in haproxy
+      shell:  echo "enable server radosgw-lb/{{ ansible_hostname }}" | socat stdio /var/lib/haproxy/stats
+      delegate_to: "{{ item }}"
+      with_items: groups.radosgw-lb
