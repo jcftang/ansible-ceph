@@ -1,0 +1,7 @@
+# order matters!
+---
+- hosts: all
+  user: root
+
+  roles:
+    - { role: ../../roles/proxy }
