@@ -27,6 +27,8 @@ Vagrant::Config.run do |global_config|
       "--name", "ceph VM",
       "--memory", "1024",
     ]
+    config.vm.customize [ "createhd", "--filename", "disk-1", "--size", "5000" ]
+    config.vm.customize [ "storageattach", :id, "--storagectl", "SATA Controller", "--port", 3+1, "--device", 0, "--type", "hdd", "--medium", "disk-1.vdi" ]
   end
 
 end
