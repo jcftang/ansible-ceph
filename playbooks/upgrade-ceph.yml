@@ -1,0 +1,13 @@
+---
+- hosts: all
+  user: root
+  serial: 1
+
+  tasks:
+    - apt_repository: repo='deb http://eu.ceph.com/debian-cuttlefish/ $(lsb_release -sc) main' state=absent
+    - apt_repository: repo='deb http://eu.ceph.com/debian-dumpling/ $(lsb_release -sc) main' state=present
+    - apt: name={{item}} state=latest update_cache=yes
+      with_items:
+        - ceph
+        - ceph-common
+    - apt: upgrade=yes
