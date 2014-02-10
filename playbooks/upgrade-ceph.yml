@@ -1,13 +1,46 @@
 ---
 - hosts: all
   user: root
-  serial: 1
 
   tasks:
     - apt_repository: repo='deb http://eu.ceph.com/debian-cuttlefish/ $(lsb_release -sc) main' state=absent
-    - apt_repository: repo='deb http://eu.ceph.com/debian-dumpling/ $(lsb_release -sc) main' state=present
-    - apt: name={{item}} state=latest update_cache=yes
+    - apt_repository: repo='deb http://eu.ceph.com/debian-cuttlefish/ precise main' state=absent
+    - apt_repository: repo='deb-src http://eu.ceph.com/debian-cuttlefish/ precise main' state=absent
+    - apt_repository: repo='deb http://eu.ceph.com/debian-dumpling/ $(lsb_release -sc) main' state=absent
+    - apt_repository: repo='deb http://eu.ceph.com/debian-dumpling/ precise main' state=absent
+    - apt_repository: repo='deb http://eu.ceph.com/debian-emperor/ $(lsb_release -sc) main' state=absent
+    - apt_repository: repo='deb http://opennebula.org/repo/Ubuntu/12.04 stable opennebula' state=absent
+    - apt_repository: repo='deb http://eu.ceph.com/debian-emperor/ precise main' state=present
+    - apt: name={{item}} state=latest update_cache=yes cache_valid_time=3600
       with_items:
         - ceph
         - ceph-common
+    - apt: upgrade=yes
+
+- hosts: ceph_mon
+  user: root
+  serial: 1
+
+  tasks:
+    - apt: name={{item}} state=latest update_cache=yes cache_valid_time=3600
+      with_items:
+        - ceph
+        - ceph-common
+    - apt: upgrade=yes
+
+- hosts: ceph_mds;ceph_osd
+  user: root
+  serial: 2
+
+  tasks:
+    - apt: name={{item}} state=latest update_cache=yes cache_valid_time=3600
+      with_items:
+        - ceph
+        - ceph-common
+    - apt: upgrade=yes
+
+- hosts: all
+  user: root
+
+  tasks:
     - apt: upgrade=yes
