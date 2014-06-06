@@ -1,0 +1,23 @@
+# Please review carefully before updating/running
+---
+- hosts: all
+  user: root
+
+  tasks:
+    - apt: update_cache=yes cache_valid_time=3600
+    - apt: name=linux-headers-generic-lts-saucy state=latest
+
+    - apt: name={{ item }} state=absent
+      with_sequence: start=0 end=22 format=linux-image-3.11.0-%d-generic
+    - apt: name={{ item }} state=absent
+      with_sequence: start=0 end=22 format=linux-image-3.11.0-%d
+    - apt: name={{ item }} state=absent
+      with_sequence: start=0 end=22 format=linux-headers-3.11.0-%d
+
+    - apt: name={{ item }} state=absent
+      with_sequence: start=0 end=61 format=linux-image-3.2.0-%d-generic
+    - apt: name={{ item }} state=absent
+      with_sequence: start=0 end=61 format=linux-image-3.2.0-%d
+    - apt: name={{ item }} state=absent
+      with_sequence: start=0 end=61 format=linux-headers-3.2.0-%d
+  # at somepoint do this... apt-get autoremove -y; apt-get purge -y $(dpkg --list |grep '^rc' |awk '{print $2}')
